@@ -1,0 +1,19 @@
+target
+.git
+.idea
+.vscode
+*.iml
+
+# Secrets — never bake these into an image layer. (Not referenced by the Dockerfile's explicit
+# COPYs either way, but excluded from the build context too as defense in depth.)
+.env
+.env.*
+
+# Local-only artifacts not needed for the build.
+uploads
+*.log
+.DS_Store
+
+# Docs/CI, irrelevant to the build context.
+README.md
+.github

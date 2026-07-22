@@ -1,0 +1,91 @@
+# SplitPay backend configuration.
+#
+# Values are read from the existing backend/.env file (loaded by spring-dotenv) so the same
+# environment variables that drove the Node.js app drive this one:
+#   DATABASE_URL    - MongoDB connection string
+#   JWT_SECRET      - HMAC signing secret for JWTs
+#   GEMINI_API_KEY  - Google Gemini API key for bill parsing
+#   PORT            - HTTP port (defaults to 4000, matching the Node app)
+
+#server:
+#  port: ${PORT:4000}
+
+server:
+  port: ${PORT:8080}
+
+  # Allow large multipart uploads for bill images (matches the lenient Node/multer setup,
+  # but with an explicit ceiling).
+  tomcat:
+    max-http-form-post-size: 20MB
+
+spring:
+  application:
+    name: splitpay-backend
+  data:
+    mongodb:
+      uri: ${DATABASE_URL:mongodb://localhost:27017/splitpay}
+      auto-index-creation: true
+  servlet:
+    multipart:
+      max-file-size: 15MB
+      max-request-size: 20MB
+
+splitpay:
+  jwt:
+    secret: ${JWT_SECRET:change-me-in-env-this-is-only-a-dev-fallback-secret-value}
+    # 10 hours, identical to the original `expiresIn: "10h"`.
+    expiration-ms: 36000000
+  gemini:
+    api-key: ${GEMINI_API_KEY:}
+    # Same model + v1 endpoint the Node service used.
+    url: https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent
+  ocr:
+    # Tesseract language. The eng.traineddata file already shipped in the backend folder.
+    language: eng
+    # Directory containing <lang>.traineddata. Defaults to the backend root where eng.traineddata lives.
+    data-path: ${TESSDATA_PREFIX:.}
+  uploads:
+    dir: uploads
+    # Per-user cap on /bills/upload (each call is a paid Gemini Vision request), independent of
+    # the generic per-IP rate limiter.
+    rate-limit-per-hour: ${UPLOAD_RATE_LIMIT_PER_HOUR:20}
+  cors:
+    # Set ALLOWED_ORIGINS to a comma-separated list of origins in production.
+    # Example: https://app.yourdomain.com,https://admin.yourdomain.com
+    # Leave unset or "*" for local development (allows all origins).
+    allowed-origins: ${ALLOWED_ORIGINS:*}
+  security:
+    # Only set TRUST_PROXY=true when this app sits behind a proxy/load balancer YOU control that
+    # overwrites (not appends to) X-Forwarded-For. Otherwise clients can spoof it to bypass rate
+    # limiting, so it's ignored by default and the TCP connection's remote address is used instead.
+    trust-proxy: ${TRUST_PROXY:false}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # Only "health" is exposed over HTTP — env/beans/etc. stay off even if someone forgets to
+        # scope the security rule, since they're simply not mapped.
+        include: health
+  endpoint:
+    health:
+      # Adds /actuator/health/liveness and /actuator/health/readiness for container orchestrators
+      # (k8s, ECS, etc.), regardless of whether a container environment is auto-detected.
+      probes:
+        enabled: true
+      show-details: never
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+logging:
+  level:
+    com.splitpay: INFO
