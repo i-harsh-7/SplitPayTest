@@ -437,7 +437,17 @@ class _ManuallyAddPageState extends State<ManuallyAddPage> {
                     try {
                       final price = double.parse(itemPriceController.text);
                       final totalQuantity = int.parse(itemQuantityController.text);
-                      
+
+                      if (price <= 0 || totalQuantity <= 0) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Price and quantity must be greater than zero'),
+                            backgroundColor: AppColors.danger,
+                          ),
+                        );
+                        return;
+                      }
+
                       // Get selected member data
                       final selectedMemberData = widget.members
                           .where((member) => selectedMembers[member['email']!] == true)

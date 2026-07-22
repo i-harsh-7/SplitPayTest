@@ -140,7 +140,6 @@ class MembersPage extends StatelessWidget {
 
                     // Members list
                     ...members.map((member) {
-                      print('Building member card for: ${member['name']}, isAdmin: ${member['isAdmin']}');
                       return _buildMemberCard(
                         context: context,
                         name: member['name']!,

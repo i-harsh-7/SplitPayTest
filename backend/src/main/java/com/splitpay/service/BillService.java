@@ -92,6 +92,12 @@ public class BillService {
         if (file == null || file.isEmpty()) {
             throw ApiException.badRequest("No file uploaded");
         }
+        if (!StringUtils.hasText(groupId)) {
+            throw ApiException.badRequest("groupId is required");
+        }
+        // Without this, any authenticated user could attach an uploaded bill to a group they
+        // don't belong to, since nothing else here checks membership before saving.
+        requireGroupMember(groupId, userId);
         // Checked before storing the file or calling Gemini so a throttled user doesn't cost us
         // either — each call past this point is a paid Vision API request.
         uploadRateLimiter.checkAndRecord(userId);
@@ -276,7 +282,15 @@ public class BillService {
 
     /** Equal split among the supplied userIds, with everyone owing the payer (assignEqually). */
     public Expense assignEqually(AssignEquallyRequest req, String requesterId) {
-        Group group = groupRepository.findById(req.groupId())
+        Expense expense = expenseRepository.findById(req.expenseId())
+                .orElseThrow(() -> ApiException.notFound("Expense not found"));
+        // The membership check must run against the expense's actual group, not the client-
+        // supplied groupId — otherwise a member of group A could pass their own group's id to
+        // clear the check while targeting an expenseId that belongs to group B.
+        if (!expense.getGroup().equals(req.groupId())) {
+            throw ApiException.badRequest("groupId does not match the expense's group");
+        }
+        Group group = groupRepository.findById(expense.getGroup())
                 .orElseThrow(() -> ApiException.notFound("Group not found"));
         if (!group.getMembers().contains(requesterId)) {
             throw ApiException.forbidden("You are not a member of this group");
@@ -287,8 +301,6 @@ public class BillService {
                 throw ApiException.badRequest("User " + id + " is not a member of the group");
             }
         }
-        Expense expense = expenseRepository.findById(req.expenseId())
-                .orElseThrow(() -> ApiException.notFound("Expense not found"));
 
         int n = req.userIds().size();
         BigDecimal total = expense.getTotalAmount();

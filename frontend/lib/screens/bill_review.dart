@@ -45,26 +45,19 @@ class _BillReviewPageState extends State<BillReviewPage> {
       _paidBy = widget.members[0]['email'];
     }
     
-    print('📋 BillReviewPage initialized with ${widget.members.length} members:');
     for (var member in widget.members) {
-      print('   - ${member['name']}: ID=${member['id']}, Email=${member['email']}');
     }
   }
 
   Future<void> _loadBillDetails() async {
     try {
-      print('📥 Loading bill details for expense: ${widget.expenseId}');
       
       final details = await BillService.getBillDetails(widget.expenseId);
       
       if (details != null && mounted) {
-        print('✅ Bill details loaded successfully');
-        print('   Total: ₹${details['totalAmount']}');
-        print('   Items: ${(details['items'] as List?)?.length ?? 0}');
         
         final items = details['items'] as List?;
         if (items != null) {
-          print('\n🔍 Checking for parsing errors...');
           double calculatedTotal = 0.0;
           
           for (int i = 0; i < items.length; i++) {
@@ -75,24 +68,16 @@ class _BillReviewPageState extends State<BillReviewPage> {
             final itemTotal = price * quantity;
             
             calculatedTotal += itemTotal;
-            print('   ${i + 1}. $name: $quantity × ₹$price = ₹$itemTotal');
             
             if (itemTotal > (details['totalAmount'] * 0.8)) {
-              print('   ⚠️ WARNING: ${name} total (₹$itemTotal) is >80% of bill total (₹${details['totalAmount']})');
-              print('   This suggests quantity and unit price might be swapped!');
             }
           }
           
           final billTotal = (details['totalAmount'] ?? 0).toDouble();
           final difference = (calculatedTotal - billTotal).abs();
           
-          print('\n📊 Totals:');
-          print('   Calculated: ₹${calculatedTotal.toStringAsFixed(2)}');
-          print('   Bill Total: ₹${billTotal.toStringAsFixed(2)}');
-          print('   Difference: ₹${difference.toStringAsFixed(2)}');
           
           if (difference > 1.0) {
-            print('   ❌ Mismatch detected! Items don\'t add up to bill total.');
           }
         }
         
@@ -111,7 +96,6 @@ class _BillReviewPageState extends State<BillReviewPage> {
         throw Exception('Failed to load bill details');
       }
     } catch (e) {
-      print('❌ Error loading bill details: $e');
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -280,13 +264,11 @@ class _BillReviewPageState extends State<BillReviewPage> {
       return;
     }
 
-    print('🔍 Validating member IDs...');
     for (var member in widget.members) {
       final memberId = member['id'];
       final memberName = member['name'];
       
       if (memberId == null || memberId.isEmpty || memberId == 'null') {
-        print('❌ Invalid ID for member: $memberName (ID: $memberId)');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Member "$memberName" has invalid ID. Cannot proceed.'),
@@ -296,13 +278,11 @@ class _BillReviewPageState extends State<BillReviewPage> {
         );
         return;
       }
-      print('   ✅ $memberName: ID=$memberId');
     }
 
     setState(() => _isProcessing = true);
 
     try {
-      print('\n🔍 Fetching fresh group data from backend...');
       final token = await AuthService.getToken();
       if (token == null) throw Exception('Not authenticated');
 
@@ -313,7 +293,6 @@ class _BillReviewPageState extends State<BillReviewPage> {
       };
 
       final groupRes = await http.get(groupUri, headers: groupHeaders).timeout(const Duration(seconds: 10));
-      print('📡 Group fetch status: ${groupRes.statusCode}');
 
       if (groupRes.statusCode != 200) {
         throw Exception('Failed to fetch group data');
@@ -337,7 +316,6 @@ class _BillReviewPageState extends State<BillReviewPage> {
         }
       }
 
-      print('👥 Backend group member IDs: $backendMemberIds');
 
       for (var member in widget.members) {
         final memberId = member['id'];
@@ -345,12 +323,10 @@ class _BillReviewPageState extends State<BillReviewPage> {
           throw Exception('Member ${member['name']} (ID: $memberId) is not in the group according to backend!');
         }
       }
-      print('✅ All members verified in backend group');
 
       final items = _expenseDetails?['items'] as List?;
       if (items == null) throw Exception('No items found');
 
-      print('📊 Calculating splits for ${items.length} items...');
 
       Map<String, double> memberOwes = {};
       Map<String, String> memberIdMap = {};
@@ -372,19 +348,16 @@ class _BillReviewPageState extends State<BillReviewPage> {
         final assignedMembers = _itemAssignments[i.toString()] ?? [];
         
         if (assignedMembers.isEmpty) {
-          print('   ⚠️ $itemName: No members assigned, skipping');
           continue;
         }
         
         final perPerson = totalPrice / assignedMembers.length;
         
-        print('   📦 $itemName (₹$totalPrice):');
         
         for (final memberIdx in assignedMembers) {
           final memberEmail = widget.members[memberIdx]['email']!;
           final memberName = widget.members[memberIdx]['name']!;
           memberOwes[memberEmail] = (memberOwes[memberEmail] ?? 0) + perPerson;
-          print('      - $memberName owes ₹${perPerson.toStringAsFixed(2)}');
         }
       }
 
@@ -395,14 +368,9 @@ class _BillReviewPageState extends State<BillReviewPage> {
       }
       
       final payerMember = widget.members.firstWhere((m) => m['email'] == _paidBy);
-      print('\n💰 PAYER INFORMATION:');
-      print('   Name: ${payerMember['name']}');
-      print('   Email: $_paidBy');
-      print('   ID: $payerId');
 
       List<Map<String, dynamic>> assignments = [];
       
-      print('\n📋 CREATING ASSIGNMENTS:');
       double totalAssigned = 0.0;
       
       for (var member in widget.members) {
@@ -411,12 +379,8 @@ class _BillReviewPageState extends State<BillReviewPage> {
         final memberName = member['name']!;
         final amount = memberOwes[memberEmail] ?? 0.0;
         
-        print('   👤 $memberName (ID: $memberId)');
-        print('      Email: $memberEmail');
-        print('      Owes: ₹${amount.toStringAsFixed(2)}');
         
         if (memberId == payerId) {
-          print('      ⭐️ Skipped (this is the payer - no self-assignment)');
           continue;
         }
         
@@ -427,9 +391,7 @@ class _BillReviewPageState extends State<BillReviewPage> {
             'amount': amount,
           });
           totalAssigned += amount;
-          print('      ✅ Assignment created: $memberId → $payerId (₹${amount.toStringAsFixed(2)})');
         } else {
-          print('      ⭕ Skipped (amount is 0)');
         }
       }
 
@@ -437,10 +399,6 @@ class _BillReviewPageState extends State<BillReviewPage> {
         throw Exception('No valid assignments created. Please assign items to members other than the payer.');
       }
 
-      print('\n📊 SUMMARY:');
-      print('   Total bill: ₹${_expenseDetails?['totalAmount']}');
-      print('   Total assigned to others: ₹${totalAssigned.toStringAsFixed(2)}');
-      print('   Number of assignments: ${assignments.length}');
 
       LoadingDialog.show(
         context: context,
@@ -450,33 +408,25 @@ class _BillReviewPageState extends State<BillReviewPage> {
         primaryColor: Theme.of(context).primaryColor,
       );
 
-      print('\n📤 STEP 1: Calling assignMoney API...');
       final assignResult = await BillService.assignMoney(
         expenseId: widget.expenseId,
         assignments: assignments,
       );
 
-      print('📥 assignMoney response:');
-      print(jsonEncode(assignResult));
 
       if (assignResult['success'] != true) {
         throw Exception(assignResult['message'] ?? 'Failed to assign money');
       }
 
-      print('✅ Money assigned successfully');
 
-      print('\n📤 STEP 2: Calling settleAssignments API...');
       final settleResult = await BillService.settleAssignments(
         expenseId: widget.expenseId,
       );
 
-      print('📥 settleAssignments response:');
-      print(jsonEncode(settleResult));
 
       LoadingDialog.hide(context);
 
       if (settleResult['success'] == true) {
-        print('✅ Assignments settled successfully');
         
         // ✅ Cache this expense locally in GroupService
         try {
@@ -516,10 +466,7 @@ class _BillReviewPageState extends State<BillReviewPage> {
           };
           
           groupService.addExpenseToGroup(widget.groupId, expenseSummary);
-          print('✅ Expense cached locally in GroupService');
-        } catch (e) {
-          print('⚠️ Error caching expense: $e');
-        }
+        } catch (_) {}
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -540,10 +487,6 @@ class _BillReviewPageState extends State<BillReviewPage> {
         throw Exception(settleResult['message'] ?? 'Failed to settle assignments');
       }
     } catch (e) {
-      print('\n❌ ERROR in _submitBill:');
-      print('   ${e.toString()}');
-      print('   Stack trace:');
-      print(StackTrace.current);
       
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop();

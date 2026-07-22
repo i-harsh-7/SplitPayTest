@@ -324,13 +324,10 @@ class _HomePanelState extends State<HomePanel> {
                         throw Exception('Failed to load group details');
                       }
 
-                      print('📦 Group data received: ${groupData.keys}');
 
                       List<Map<String, String>> members = [];
                       final membersList = groupData['members'];
                       
-                      print('👥 Members list type: ${membersList.runtimeType}');
-                      print('👥 Members list: $membersList');
                       
                       if (membersList is List && membersList.isNotEmpty) {
                         for (final member in membersList) {
@@ -339,7 +336,6 @@ class _HomePanelState extends State<HomePanel> {
                             final memberName = member['name']?.toString() ?? 'Member';
                             final memberEmail = member['email']?.toString() ?? '';
                             
-                            print('   Processing: $memberName (ID: $memberId)');
                             
                             if (memberId.isNotEmpty && memberId != 'null') {
                               final avatarId = memberEmail.isNotEmpty 
@@ -353,13 +349,11 @@ class _HomePanelState extends State<HomePanel> {
                                 'avatar': 'https://i.pravatar.cc/150?img=$avatarId',
                               });
                               
-                              print('   ✅ Added: $memberName');
                             }
                           }
                         }
                       }
 
-                      print('📋 Total members extracted: ${members.length}');
 
                       if (members.isEmpty) {
                         throw Exception('No valid members found in group. Please ensure the group has members.');
@@ -380,7 +374,6 @@ class _HomePanelState extends State<HomePanel> {
                         );
                       }
                     } catch (e) {
-                      print('❌ Error in _showAddBillDialog: $e');
                       
                       if (mounted && navigator.canPop()) {
                         try {

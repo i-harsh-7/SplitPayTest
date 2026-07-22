@@ -15,7 +15,6 @@ public class SplitPayProperties {
 
     private final Jwt jwt = new Jwt();
     private final Gemini gemini = new Gemini();
-    private final Ocr ocr = new Ocr();
     private final Uploads uploads = new Uploads();
     private final Cors cors = new Cors();
     private final Security security = new Security();
@@ -30,12 +29,6 @@ public class SplitPayProperties {
     public static class Gemini {
         private String apiKey;
         private String url;
-    }
-
-    @Data
-    public static class Ocr {
-        private String language = "eng";
-        private String dataPath = ".";
     }
 
     @Data

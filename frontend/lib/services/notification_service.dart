@@ -57,9 +57,7 @@ class NotificationService {
         // No notifications found - return empty list
         return [];
       }
-    } catch (e) {
-      print('Error fetching notifications: $e');
-    }
+    } catch (_) {}
     
     return [];
   }
@@ -175,9 +173,7 @@ class NotificationService {
       if (res.statusCode == 200 || res.statusCode == 204) {
         return true;
       }
-    } catch (e) {
-      print('Error dismissing notification: $e');
-    }
+    } catch (_) {}
     
     return false;
   }
@@ -202,9 +198,7 @@ class NotificationService {
       if (res.statusCode == 200) {
         return true;
       }
-    } catch (e) {
-      print('Error marking notification as read: $e');
-    }
+    } catch (_) {}
     
     return false;
   }
@@ -229,9 +223,7 @@ class NotificationService {
       if (res.statusCode == 200) {
         return true;
       }
-    } catch (e) {
-      print('Error marking all notifications as read: $e');
-    }
+    } catch (_) {}
     
     return false;
   }

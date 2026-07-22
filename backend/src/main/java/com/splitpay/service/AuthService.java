@@ -111,8 +111,20 @@ public class AuthService {
     public void changePassword(ChangePasswordRequest req, String userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> ApiException.notFound("User not found"));
+
+        if (user.getLockedUntil() != null && user.getLockedUntil().isAfter(Instant.now())) {
+            throw ApiException.tooManyRequests(
+                    "Account temporarily locked due to repeated failed attempts. Please try again later.");
+        }
+
         if (!passwordEncoder.matches(req.oldPassword(), user.getPassword())) {
+            registerFailedLogin(user);
             throw ApiException.badRequest("Old password is incorrect");
+        }
+
+        if (user.getFailedLoginAttempts() != 0 || user.getLockedUntil() != null) {
+            user.setFailedLoginAttempts(0);
+            user.setLockedUntil(null);
         }
         user.setPassword(passwordEncoder.encode(req.newPassword()));
         // Invalidate every token issued before this change, so a stolen bearer token stops

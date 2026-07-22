@@ -70,9 +70,7 @@ class _SplitPayAppState extends State<SplitPayApp> {
           return;
         }
       }
-    } catch (e) {
-      print('Error checking auth status: $e');
-    }
+    } catch (_) {}
     
     setState(() {
       _isAuthenticated = false;

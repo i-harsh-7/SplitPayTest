@@ -91,9 +91,7 @@ class InviteService {
           return invites;
         }
       }
-    } catch (e) {
-      print('Error fetching pending invites: $e');
-    }
+    } catch (_) {}
     return [];
   }
 

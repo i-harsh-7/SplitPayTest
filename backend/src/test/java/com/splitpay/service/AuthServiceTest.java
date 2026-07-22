@@ -101,6 +101,33 @@ class AuthServiceTest {
     }
 
     @Test
+    void changePassword_locksAccountAfterFiveFailedOldPasswordAttempts() {
+        when(userRepository.findById("user-1")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
+
+        ChangePasswordRequest req = new ChangePasswordRequest("wrong-old-password", "new-password1");
+        for (int i = 0; i < 5; i++) {
+            assertThatThrownBy(() -> authService.changePassword(req, "user-1")).isInstanceOf(ApiException.class);
+        }
+
+        assertThat(user.getLockedUntil()).isNotNull();
+        assertThat(user.getLockedUntil()).isAfter(Instant.now());
+    }
+
+    @Test
+    void changePassword_rejectsEvenCorrectOldPasswordWhileLocked() {
+        user.setLockedUntil(Instant.now().plusSeconds(600));
+        when(userRepository.findById("user-1")).thenReturn(Optional.of(user));
+
+        ChangePasswordRequest req = new ChangePasswordRequest("old-password", "new-password1");
+
+        assertThatThrownBy(() -> authService.changePassword(req, "user-1"))
+                .isInstanceOf(ApiException.class)
+                .extracting(ex -> ((ApiException) ex).getStatus())
+                .isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+    }
+
+    @Test
     void logout_bumpsTokenVersion() {
         when(userRepository.findById("user-1")).thenReturn(Optional.of(user));
 

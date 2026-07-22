@@ -37,7 +37,6 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
   void initState() {
     super.initState();
     _groupService = Provider.of<GroupService>(context, listen: false);
-    print('🧭 GroupDetailsPage.initState for group: ${widget.groupId}');
     _loadGroupDetails();
     _loadBillAssignments();
     _loadBills();
@@ -48,31 +47,16 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
     try {
       final currentUser = await AuthService.getProfile();
       _currentUserEmail = currentUser?.email ?? '';
-      print('👤 Current user email: $_currentUserEmail');
       final groupData = await _groupService.fetchGroupDetails(widget.groupId);
       if (groupData != null && mounted) {
-        print('╔════════════════════════════════════════╗');
-        print('🔍 RAW GROUP DATA:');
-        print(jsonEncode(groupData));
-        print('╚════════════════════════════════════════╝');
         final membersList = groupData['members'];
-        print('👥 Members field type: ${membersList.runtimeType}');
-        print('👥 Members content: $membersList');
         if (membersList is List) {
-          print('👥 Member count: ${membersList.length}');
           for (int i = 0; i < membersList.length; i++) {
             final member = membersList[i];
-            print('   [$i] Type: ${member.runtimeType}');
-            print('   [$i] Content: $member');
             if (member is Map) {
-              print('   [$i] Keys: ${member.keys}');
-              print('   [$i] _id: ${member['_id']}');
-              print('   [$i] name: ${member['name']}');
-              print('   [$i] email: ${member['email']}');
             }
           }
         }
-        print('╚════════════════════════════════════════╝');
         final createdByField = groupData['createdBy'];
         String? adminId;
         if (createdByField is Map) {
@@ -82,20 +66,17 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
         } else if (createdByField is String) {
           adminId = createdByField;
         }
-        print('👑 Admin ID: $adminId, Name: $_adminName, Email: $_adminEmail');
         _isCurrentUserAdmin = (_adminEmail != null && _adminEmail == _currentUserEmail);
 
         // Build the new member list before calling setState so the mutation
         // is committed atomically with the rebuild.
         final newMembers = <Map<String, String>>[];
         if (membersList is List && membersList.isNotEmpty) {
-          print('👥 Processing ${membersList.length} members from group...');
           for (final member in membersList) {
             if (member is Map) {
               final memberId = member['_id']?.toString() ?? member['id']?.toString() ?? '';
               final memberName = member['name']?.toString() ?? 'Member';
               final memberEmail = member['email']?.toString() ?? '';
-              print('   Processing: $memberName (ID: $memberId)');
               if (memberId.isNotEmpty && memberId != 'null') {
                 final avatarId = memberEmail.isNotEmpty
                     ? (memberEmail.hashCode.abs() % 70) + 1
@@ -110,29 +91,24 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                   'isCurrentUser': isCurrentUser ? 'true' : 'false',
                   'isAdmin': isAdmin ? 'true' : 'false',
                 });
-                print('   ✅ Added: $memberName');
               }
             } else if (member is String) {
-              print('   ⚠️ Member is just an ID string: $member');
             }
           }
         }
         if (newMembers.isEmpty) {
           throw Exception('No valid members found. The backend must populate member details in /group/get/:id endpoint.');
         }
-        print('📋 Final members: ${newMembers.length}');
         setState(() {
           _members = newMembers;
           _groupName = groupData['name']?.toString() ?? 'Group';
           _groupDescription = groupData['description']?.toString() ?? '';
           _isLoading = false;
         });
-        print('✅ Group loaded: $_groupName');
       } else {
         throw Exception('Failed to load group data');
       }
     } catch (e) {
-      print('❌ Error loading group details: $e');
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -148,28 +124,20 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
 
   Future<void> _loadBillAssignments() async {
     try {
-      print('🔄 _loadBillAssignments() called');
       final data = await GetBillsService.getAssignmentsForGroup();
-      print('🔄 _loadBillAssignments received ${data.length} items');
       if (mounted) setState(() => _billAssignments = data);
-    } catch (e) {
-      print('❌ Error loading bill assignments: $e');
-    }
+    } catch (_) {}
   }
 
   Future<void> _loadBills() async {
     try {
-      print('🔄 _loadBills() called for group ${widget.groupId}');
       final data = await GetBillsService.getAllBills(groupId: widget.groupId);
-      print('📥 _loadBills received ${data.length} bills');
       if (mounted) {
         setState(() => _bills = data);
         // Keep GroupService cache in sync so BalancesPanel analytics are accurate
         _groupService.setGroupBills(widget.groupId, data);
       }
-    } catch (e) {
-      print('❌ Error loading bills: $e');
-    }
+    } catch (_) {}
   }
 
   String _formatDate(String dateStr) {
@@ -958,7 +926,6 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
               child: RefreshIndicator(
                 color: primaryColor,
                 onRefresh: () async {
-                  print('🔁 Pull-to-refresh triggered');
                   await _loadGroupDetails();
                   await _loadBillAssignments();
                   await _loadBills();
@@ -1359,10 +1326,7 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                   );
                   return;
                 }
-                print('🚀 Navigating to AddBillPage with ${_members.length} members');
-                print('📋 Members data:');
                 for (var m in _members) {
-                  print('   - ${m['name']}: ID=${m['id']}');
                 }
                 Navigator.push(
                   context,

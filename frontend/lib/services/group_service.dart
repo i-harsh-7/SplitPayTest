@@ -178,7 +178,6 @@ class GroupService extends ChangeNotifier {
       }
       // Any other non-200 status: leave existing list intact, don't clear
     } catch (e) {
-      print('Error fetching groups: $e');
       // Network error — leave existing list intact
     }
   }
@@ -218,9 +217,7 @@ class GroupService extends ChangeNotifier {
         notifyListeners();
         return true;
       }
-    } catch (e) {
-      print('Error deleting group: $e');
-    }
+    } catch (_) {}
     return false;
   }
 
@@ -234,21 +231,14 @@ class GroupService extends ChangeNotifier {
 
     try {
       final uri = Uri.parse('$base/group/get/$groupId');
-      print('📥 Fetching group from: $uri');
 
       final res = await http.get(uri, headers: headers).timeout(const Duration(seconds: 10));
 
-      print('📡 Status: ${res.statusCode}');
-      print('📡 Response body: ${res.body}');
 
       if (res.statusCode == 200) {
         final parsed = jsonDecode(res.body);
 
-        print('📦 Parsed structure:');
-        print('   Keys: ${parsed.keys}');
         if (parsed['group'] != null) {
-          print('   group.members type: ${parsed['group']['members'].runtimeType}');
-          print('   group.members: ${parsed['group']['members']}');
         }
 
         if (parsed is Map<String, dynamic>) {
@@ -260,9 +250,7 @@ class GroupService extends ChangeNotifier {
           return parsed;
         }
       }
-    } catch (e) {
-      print('❌ Error: $e');
-    }
+    } catch (_) {}
     return null;
   }
 }

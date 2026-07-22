@@ -16,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.mock.web.MockMultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -157,12 +158,49 @@ class BillServiceAuthorizationTest {
     void assignEqually_rejectsRequesterWhoIsNotAGroupMember() {
         AssignEquallyRequest req = new AssignEquallyRequest(
                 EXPENSE_ID, List.of(MEMBER_A, MEMBER_B), MEMBER_A, GROUP_ID);
+        when(expenseRepository.findById(EXPENSE_ID)).thenReturn(Optional.of(expense));
         when(groupRepository.findById(GROUP_ID)).thenReturn(Optional.of(group));
 
         assertThatThrownBy(() -> billService.assignEqually(req, OUTSIDER))
                 .isInstanceOf(ApiException.class)
                 .extracting(ex -> ((ApiException) ex).getStatus())
                 .isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    void assignEqually_rejectsMismatchedGroupId_evenWhenRequesterIsAGroupMember() {
+        // req.groupId() names a group the requester actually belongs to, but the target
+        // expense belongs to a different group — this is exactly the IDOR the fix closes.
+        String otherGroupId = "group-2";
+        AssignEquallyRequest req = new AssignEquallyRequest(
+                EXPENSE_ID, List.of(MEMBER_A, MEMBER_B), MEMBER_A, otherGroupId);
+        when(expenseRepository.findById(EXPENSE_ID)).thenReturn(Optional.of(expense));
+
+        assertThatThrownBy(() -> billService.assignEqually(req, OUTSIDER))
+                .isInstanceOf(ApiException.class)
+                .extracting(ex -> ((ApiException) ex).getStatus())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void uploadBill_rejectsRequesterWhoIsNotAGroupMember() {
+        MockMultipartFile file = new MockMultipartFile("bill", "receipt.jpg", "image/jpeg", new byte[] {1, 2, 3});
+        when(groupRepository.findById(GROUP_ID)).thenReturn(Optional.of(group));
+
+        assertThatThrownBy(() -> billService.uploadBill(file, GROUP_ID, "Dinner", OUTSIDER))
+                .isInstanceOf(ApiException.class)
+                .extracting(ex -> ((ApiException) ex).getStatus())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    void uploadBill_rejectsMissingGroupId() {
+        MockMultipartFile file = new MockMultipartFile("bill", "receipt.jpg", "image/jpeg", new byte[] {1, 2, 3});
+
+        assertThatThrownBy(() -> billService.uploadBill(file, "  ", "Dinner", MEMBER_A))
+                .isInstanceOf(ApiException.class)
+                .extracting(ex -> ((ApiException) ex).getStatus())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test

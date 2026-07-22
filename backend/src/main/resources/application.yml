@@ -7,11 +7,8 @@
 #   GEMINI_API_KEY  - Google Gemini API key for bill parsing
 #   PORT            - HTTP port (defaults to 4000, matching the Node app)
 
-#server:
-#  port: ${PORT:4000}
-
 server:
-  port: ${PORT:8080}
+  port: ${PORT:4000}
 
   # Allow large multipart uploads for bill images (matches the lenient Node/multer setup,
   # but with an explicit ceiling).
@@ -39,11 +36,6 @@ splitpay:
     api-key: ${GEMINI_API_KEY:}
     # Same model + v1 endpoint the Node service used.
     url: https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent
-  ocr:
-    # Tesseract language. The eng.traineddata file already shipped in the backend folder.
-    language: eng
-    # Directory containing <lang>.traineddata. Defaults to the backend root where eng.traineddata lives.
-    data-path: ${TESSDATA_PREFIX:.}
   uploads:
     dir: uploads
     # Per-user cap on /bills/upload (each call is a paid Gemini Vision request), independent of

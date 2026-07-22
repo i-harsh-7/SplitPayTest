@@ -12,13 +12,11 @@ COPY src src
 RUN ./mvnw -q -B clean package -DskipTests
 
 # ---- runtime stage ------------------------------------------------------------------------------
-# Slim JRE (no javac/Maven) + tesseract-ocr (native dep of the tess4j OCR fallback) + curl (for the
-# HEALTHCHECK below). Debian/Ubuntu-based, not Alpine, so tess4j's native/leptonica libs link against
-# the glibc they expect.
+# Slim JRE (no javac/Maven) + curl (for the HEALTHCHECK below).
 FROM eclipse-temurin:21-jre AS runtime
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends tesseract-ocr curl && \
+    apt-get install -y --no-install-recommends curl && \
     rm -rf /var/lib/apt/lists/*
 
 RUN groupadd --system splitpay && \
@@ -27,14 +25,13 @@ RUN groupadd --system splitpay && \
 WORKDIR /app
 
 COPY --from=build /app/target/*.jar app.jar
-COPY eng.traineddata ./eng.traineddata
 RUN mkdir -p uploads && chown -R splitpay:splitpay /app
 
 USER splitpay
 
-EXPOSE 8080
+EXPOSE 4000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=45s --retries=3 \
-    CMD curl -fsS http://localhost:8080/actuator/health || exit 1
+    CMD curl -fsS http://localhost:4000/actuator/health || exit 1
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

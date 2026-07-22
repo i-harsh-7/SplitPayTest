@@ -14,7 +14,6 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _rememberMe = false;
   bool _loading = false;
   String? _error;
 
@@ -65,8 +64,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   }
 
   Future<void> _login() async {
-    print("Login button pressed"); // Debug log
-    
     // Dismiss keyboard
     FocusScope.of(context).unfocus();
     
@@ -78,13 +75,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     try {
       final email = _emailController.text.trim();
       final password = _passwordController.text;
-      
-      print("Attempting login with email: $email"); // Debug log
-      
+
       await AuthService.login(email: email, password: password);
-      
-      print("Login successful"); // Debug log
-      
+
       if (!mounted) return;
       
       // Pop the login screen first
@@ -94,7 +87,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       widget.onLoginSuccess();
       
     } catch (e) {
-      print("Login error: $e"); // Debug log
       if (mounted) {
         setState(() => _error = e.toString());
       }
@@ -218,29 +210,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           border: OutlineInputBorder(),
                         ),
                       ),
-                      SizedBox(height: 10),
-
-                      // Remember Me & Forgot Password
-                      Row(
-                        children: [
-                          Checkbox(
-                            value: _rememberMe,
-                            onChanged: (v) => setState(() => _rememberMe = v!),
-                            activeColor: primaryColor,
-                          ),
-                          Text("Remember Me", style: TextStyle(color: textColor)),
-                          Spacer(),
-                          TextButton(
-                            onPressed: () {
-                              print("Forgot password pressed");
-                            },
-                            child: Text(
-                              "Forgot Password?",
-                              style: TextStyle(color: Colors.redAccent),
-                            ),
-                          )
-                        ],
-                      ),
                       SizedBox(height: 18),
 
                       // Login Button
@@ -302,7 +271,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           ),
                           GestureDetector(
                             onTap: () {
-                              print("Sign up link pressed");
                               Navigator.of(context).pushNamed('/signup');
                             },
                             child: Text(

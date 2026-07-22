@@ -128,15 +128,12 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
           currentUserId = userParsed['user']['_id']?.toString();
         }
       }
-    } catch (e) {
-      print('Error fetching user details: $e');
-    }
+    } catch (_) {}
 
     if (currentUserId == null || currentUserId.isEmpty) {
       throw Exception('Could not get current user ID');
     }
 
-    print('✅ Creating group with creator ID: $currentUserId');
 
     final headers = {
       'Content-Type': 'application/json',
@@ -150,13 +147,10 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
       'members': [currentUserId], // Add creator as first member
     });
 
-    print('📤 Creating group with body: $body');
 
     try {
       final res = await http.post(uri, headers: headers, body: body).timeout(const Duration(seconds: 10));
 
-      print('📡 Create group status: ${res.statusCode}');
-      print('📡 Create group response: ${res.body}');
 
       if (res.statusCode == 200 || res.statusCode == 201) {
         final Map<String, dynamic> parsed = jsonDecode(res.body);
@@ -194,16 +188,13 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
             description: g['description']?.toString() ?? group.description,
           );
           
-          print('✅ Group created successfully with ID: ${created.id}');
           return created;
         }
         return null;
       } else {
-        print('Create group failed: ${res.statusCode} ${res.body}');
         return null;
       }
     } catch (e) {
-      print('Error creating group: $e');
       return null;
     }
   }

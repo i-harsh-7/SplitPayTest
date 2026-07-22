@@ -28,18 +28,14 @@ class GetBillsService {
           return List<Map<String, dynamic>>.from(parsed['allAssigments']);
         }
       }
-    } catch (e) {
-      print('❌ Error fetching assignments: $e');
-    }
+    } catch (_) {}
     return [];
   }
 
   /// Get all bills for a group
   static Future<List<Map<String, dynamic>>> getAllBills({required String groupId}) async {
-    print('🚀 getAllBills(groupId: $groupId) invoked');
     final token = await AuthService.getToken();
     if (token == null) {
-      print('❌ getAllBills: No auth token found');
       throw Exception('Not authenticated');
     }
 
@@ -53,29 +49,18 @@ class GetBillsService {
     // No body for GET; pass groupId as query parameter
 
     try {
-      print('🌐 GET $uri');
       final res = await http.get(uri, headers: headers).timeout(const Duration(seconds: 15));
-      print('📡 getAllBills status: ${res.statusCode}');
       if (res.statusCode == 200) {
-        print('✅ Bills fetched successfully');
-        print('📦 Raw body length: ${res.body.length}');
         // Uncomment to view full body if needed
-        print('📡 Bills response: ${res.body}');
         final parsed = jsonDecode(res.body);
         if (parsed is Map<String, dynamic> && parsed['success'] == true && parsed['bills'] is List) {
           final list = List<Map<String, dynamic>>.from(parsed['bills']);
-          print('🔢 getAllBills: parsed bills count = ${list.length}');
           return list;
         } else {
-          print('⚠️ getAllBills: Unexpected response shape: $parsed');
         }
       } else {
-        print('⚠️ getAllBills non-200. Body: ${res.body}');
       }
-    } catch (e) {
-      print('❌ Error fetching bills: $e');
-    }
-    print('ℹ️ getAllBills returning empty list');
+    } catch (_) {}
     return [];
   }
 }

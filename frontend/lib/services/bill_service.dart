@@ -46,17 +46,11 @@ class BillService {
         ),
       );
 
-      print('🚀 Uploading bill to: $uri');
-      print('📦 GroupId: $groupId');
-      print('🧾 Bill Name: $billName');
-      print('📄 File path: ${imageFile.path}');
 
       final streamedResponse = await request.send()
           .timeout(const Duration(seconds: 45)); // Increased timeout for parsing
       final response = await http.Response.fromStream(streamedResponse);
 
-      print('📡 Response status: ${response.statusCode}');
-      print('📡 Response body: ${response.body}');
 
       final parsed = jsonDecode(response.body);
 
@@ -73,7 +67,6 @@ class BillService {
         };
       }
     } catch (e) {
-      print('❌ Error uploading bill: $e');
       return {
         'success': false,
         'message': 'Error: ${e.toString()}',
@@ -95,12 +88,9 @@ class BillService {
     };
 
     try {
-      print('🔍 Fetching bill details for: $expenseId');
       final res = await http.get(uri, headers: headers)
           .timeout(const Duration(seconds: 10));
 
-      print('📡 getBillDetails status: ${res.statusCode}');
-      print('📡 getBillDetails body: ${res.body}');
 
       if (res.statusCode == 200) {
         final parsed = jsonDecode(res.body);
@@ -115,9 +105,7 @@ class BillService {
           return parsed;
         }
       }
-    } catch (e) {
-      print('❌ Error fetching bill details: $e');
-    }
+    } catch (_) {}
     return null;
   }
 
@@ -144,14 +132,10 @@ class BillService {
     });
 
     try {
-      print('💰 Assigning money for expense: $expenseId');
-      print('📦 Assignments: ${jsonEncode(assignments)}');
 
       final res = await http.patch(uri, headers: headers, body: body)
           .timeout(const Duration(seconds: 15));
 
-      print('📡 assignMoney status: ${res.statusCode}');
-      print('📡 assignMoney body: ${res.body}');
 
       final parsed = jsonDecode(res.body);
 
@@ -168,7 +152,6 @@ class BillService {
         };
       }
     } catch (e) {
-      print('❌ Error assigning money: $e');
       return {
         'success': false,
         'message': 'Error: ${e.toString()}',
@@ -196,13 +179,10 @@ class BillService {
     });
 
     try {
-      print('✅ Settling assignments for expense: $expenseId');
 
       final res = await http.post(uri, headers: headers, body: body)
           .timeout(const Duration(seconds: 15));
 
-      print('📡 settleAssignments status: ${res.statusCode}');
-      print('📡 settleAssignments body: ${res.body}');
 
       final parsed = jsonDecode(res.body);
 
@@ -219,7 +199,6 @@ class BillService {
         };
       }
     } catch (e) {
-      print('❌ Error settling assignments: $e');
       return {
         'success': false,
         'message': 'Error: ${e.toString()}',
@@ -276,14 +255,10 @@ class BillService {
     final body = jsonEncode(payload);
 
     try {
-      print('📝 Creating manual expense @ $uri');
-      print('📦 Payload: ' + body);
       final res = await http
           .post(uri, headers: headers, body: body)
           .timeout(const Duration(seconds: 20));
 
-      print('📡 createManualExpense status: ${res.statusCode}');
-      print('📡 createManualExpense body: ${res.body}');
 
       final parsed = jsonDecode(res.body);
 
@@ -300,7 +275,6 @@ class BillService {
         'message': parsed['message'] ?? 'Failed to create expense',
       };
     } catch (e) {
-      print('❌ Error creating manual expense: $e');
       return {
         'success': false,
         'message': 'Error: ${e.toString()}',
@@ -308,54 +282,4 @@ class BillService {
     }
   }
 
-  /// Delete an expense by id
-  static Future<Map<String, dynamic>> deleteExpense({
-    required String expenseId,
-  }) async {
-    final token = await AuthService.getToken();
-    if (token == null) {
-      throw Exception('Not authenticated');
-    }
-
-    // Assuming backend follows /bills/delete/:id like group delete
-    final uri = Uri.parse('$_base/bills/delete/$expenseId');
-    final headers = {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
-
-    try {
-      print('🗑️ Deleting expense: $expenseId');
-      final res = await http.delete(uri, headers: headers).timeout(const Duration(seconds: 12));
-      print('📡 deleteExpense status: ${res.statusCode}');
-      print('📡 deleteExpense body: ${res.body}');
-
-      if (res.body.isNotEmpty) {
-        final parsed = jsonDecode(res.body);
-        if (res.statusCode == 200 || res.statusCode == 204) {
-          return {
-            'success': true,
-            'message': parsed is Map<String, dynamic> ? (parsed['message'] ?? 'Deleted') : 'Deleted',
-          };
-        }
-        return {
-          'success': false,
-          'message': parsed is Map<String, dynamic> ? (parsed['message'] ?? 'Failed to delete') : 'Failed to delete',
-        };
-      } else {
-        // Some APIs return no body on 204
-        final ok = res.statusCode == 200 || res.statusCode == 204;
-        return {
-          'success': ok,
-          'message': ok ? 'Deleted' : 'Failed to delete',
-        };
-      }
-    } catch (e) {
-      print('❌ Error deleting expense: $e');
-      return {
-        'success': false,
-        'message': 'Error: ${e.toString()}',
-      };
-    }
-  }
 }

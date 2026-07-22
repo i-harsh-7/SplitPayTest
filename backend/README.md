@@ -1,7 +1,7 @@
 # SplitPay Backend (Spring Boot)
 
 Java / Spring Boot port of the original Node.js + Express backend. The core behaviour is unchanged:
-the same MongoDB data model, the same JWT auth scheme, the same OCR → Gemini bill-parsing pipeline,
+the same MongoDB data model, the same JWT auth scheme, the same Gemini Vision bill-parsing pipeline,
 and — importantly — the **same JSON request/response contract**, so the existing Flutter client works
 without any changes.
 
@@ -14,7 +14,6 @@ without any changes.
 | Auth           | jsonwebtoken          | jjwt + a `OncePerRequestFilter`            |
 | Password hash  | bcryptjs (cost 10)    | Spring Security `BCryptPasswordEncoder(10)` |
 | File upload    | multer                | Spring `MultipartFile` + `FileStorageService` |
-| OCR            | tesseract.js          | Tess4J                                      |
 | LLM parsing    | axios → Gemini        | Spring `RestClient` → Gemini               |
 | Config         | dotenv                | spring-dotenv (reads the same `.env`)       |
 
@@ -26,7 +25,6 @@ Standard Maven / Spring Boot layout:
 backend/
 ├── pom.xml
 ├── mvnw, mvnw.cmd, .mvn/         # Maven wrapper (no local Maven install needed)
-├── eng.traineddata              # Tesseract English model (used by the OCR service)
 ├── .env.example                 # copy to .env and fill in
 └── src/main/
     ├── java/com/splitpay/

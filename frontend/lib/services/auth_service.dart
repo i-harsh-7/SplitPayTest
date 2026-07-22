@@ -136,8 +136,6 @@ class AuthService {
       final res = await http.patch(uri, headers: headers, body: body)
           .timeout(const Duration(seconds: 15));
 
-      print('Change Password - Status: ${res.statusCode}');
-      print('Change Password - Body: ${res.body}');
 
       if (res.body.isEmpty) {
         if (res.statusCode == 200 || res.statusCode == 204) {
@@ -218,8 +216,6 @@ class AuthService {
       final res = await http.patch(uri, headers: headers, body: body)
           .timeout(const Duration(seconds: 15));
 
-      print('Update Profile - Status: ${res.statusCode}');
-      print('Update Profile - Body: ${res.body}');
 
       if (res.body.isEmpty) {
         if (res.statusCode == 200 || res.statusCode == 204) {
@@ -285,7 +281,6 @@ class AuthService {
   static Future<Map<String, dynamic>?> getUserDetails() async {
     final token = await getToken();
     if (token == null) {
-      print('❌ No auth token found');
       return null;
     }
 
@@ -296,12 +291,9 @@ class AuthService {
     };
 
     try {
-      print('🔍 Fetching user details from: $uri');
       final res = await http.get(uri, headers: headers)
           .timeout(const Duration(seconds: 10));
 
-      print('📡 getUserDetails status: ${res.statusCode}');
-      print('📡 getUserDetails body: ${res.body}');
 
       if (res.statusCode == 200) {
         final Map<String, dynamic> parsed = jsonDecode(res.body);
@@ -314,11 +306,9 @@ class AuthService {
         // Fallback if structure is different
         return parsed;
       } else {
-        print('❌ Failed to fetch user details: ${res.statusCode}');
         return null;
       }
     } catch (e) {
-      print('❌ Error fetching user details: $e');
       return null;
     }
   }
